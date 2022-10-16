@@ -264,23 +264,30 @@ func requestRenewalLink(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func getPrevTrialLicense(c *Context, w http.ResponseWriter, r *http.Request) {
-	if c.App.Srv().LicenseManager == nil {
-		c.Err = model.NewAppError("getPrevTrialLicense", "api.license.upgrade_needed.app_error", nil, "", http.StatusForbidden)
-		return
-	}
+	// __MATTERFOSS__: Enable all OSS features for everyone
+	// if c.App.Srv().LicenseManager == nil {
+	// 	c.Err = model.NewAppError("getPrevTrialLicense", "api.license.upgrade_needed.app_error", nil, "", http.StatusForbidden)
+	// 	return
+	// }
 
-	license, err := c.App.Srv().LicenseManager.GetPrevTrial()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// license, err := c.App.Srv().LicenseManager.GetPrevTrial()
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
 	var clientLicense map[string]string
 
+	// if c.App.SessionHasPermissionTo(*c.AppContext.Session(), model.PermissionReadLicenseInformation) {
+	// 	clientLicense = utils.GetClientLicense(license)
+	// } else {
+	// 	clientLicense = utils.GetSanitizedClientLicense(utils.GetClientLicense(license))
+	// }
+
 	if c.App.SessionHasPermissionTo(*c.AppContext.Session(), model.PermissionReadLicenseInformation) {
-		clientLicense = utils.GetClientLicense(license)
+		clientLicense = c.App.Srv().ClientLicense()
 	} else {
-		clientLicense = utils.GetSanitizedClientLicense(utils.GetClientLicense(license))
+		clientLicense = c.App.Srv().GetSanitizedClientLicense()
 	}
 
 	w.Write([]byte(model.MapToJSON(clientLicense)))
