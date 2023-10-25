@@ -5,7 +5,6 @@ package platform
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,7 +17,6 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 	"github.com/mattermost/mattermost/server/v8/channels/jobs"
-	"github.com/mattermost/mattermost/server/v8/channels/store/sqlstore"
 	"github.com/mattermost/mattermost/server/v8/channels/utils"
 	"github.com/mattermost/mattermost/server/v8/einterfaces"
 )
@@ -78,34 +76,23 @@ func (ps *PlatformService) LoadLicense() {
 		return
 	}
 
-	licenseId := ""
-	props, nErr := ps.Store.System().Get()
-	if nErr == nil {
-		licenseId = props[model.SystemActiveLicenseId]
-	}
+	// __MATTERFOSS__: Enable all OSS features for everyone
+	f := model.Features{}
+	f.FutureFeatures = model.NewBool(true)
+	f.SetDefaults()
+	f.Users = model.NewInt(9000)
 
-	if !model.IsValidId(licenseId) {
-		// Lets attempt to load the file from disk since it was missing from the DB
-		license, licenseBytes := utils.GetAndValidateLicenseFileFromDisk(*ps.Config().ServiceSettings.LicenseFileLocation)
+	ps.SetLicense(&model.License{
+		Id:        "In real open source, you have the right to control your own destiny. - Linus Torvalds",
+		IssuedAt:  0,
+		StartsAt:  0,
+		ExpiresAt: 0x7fffffffffffffff,
+		Customer:  &model.Customer{},
+		Features:  &f,
+		IsTrial:   false,
+	})
 
-		if license != nil {
-			if _, err := ps.SaveLicense(licenseBytes); err != nil {
-				ps.logger.Error("Failed to save license key loaded from disk.", mlog.Err(err))
-			} else {
-				licenseId = license.Id
-			}
-		}
-	}
-
-	record, nErr := ps.Store.License().Get(sqlstore.WithMaster(context.Background()), licenseId)
-	if nErr != nil {
-		ps.logger.Error("License key from https://mattermost.com required to unlock enterprise features.", mlog.Err(nErr))
-		ps.SetLicense(nil)
-		return
-	}
-
-	ps.ValidateAndSetLicenseBytes([]byte(record.Bytes))
-	ps.logger.Info("License key valid unlocking enterprise features.")
+	ps.logger.Info("All features are enabled, do something good for someone today.")
 }
 
 func (ps *PlatformService) SaveLicense(licenseBytes []byte) (*model.License, *model.AppError) {

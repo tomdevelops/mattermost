@@ -1339,28 +1339,7 @@ func (ts *TelemetryService) trackChannelModeration() {
 }
 
 func (ts *TelemetryService) initRudder(endpoint string, rudderKey string) {
-	return // __MATTERFOSS__: No tracking
-
-	if ts.rudderClient == nil {
-		config := rudder.Config{}
-		config.Logger = rudder.StdLogger(ts.log.With(mlog.String("source", "rudder")).StdLogger(mlog.LvlDebug))
-		config.Endpoint = endpoint
-		config.Verbose = ts.verbose
-		// For testing
-		if endpoint != rudderDataplaneURL {
-			config.BatchSize = 1
-		}
-		client, err := rudder.NewWithConfig(rudderKey, endpoint, config)
-		if err != nil {
-			ts.log.Error("Failed to create Rudder instance", mlog.Err(err))
-			return
-		}
-		client.Enqueue(rudder.Identify{
-			UserId: ts.TelemetryID,
-		})
-
-		ts.rudderClient = client
-	}
+	// __MATTERFOSS__: No tracking
 }
 
 func (ts *TelemetryService) doTelemetryIfNeeded(firstRun time.Time) {
